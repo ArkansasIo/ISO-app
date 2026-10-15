@@ -1,54 +1,83 @@
 openapi: 3.1.0
 info:
   title: GitHub Universal IDE API
-  version: 0.1.0
+  version: 0.2.0
 servers:
   - url: http://localhost:8080
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer}
 paths:
   /api/v1/health:
     get:
-      summary: API and database health
-      responses:
-        '200': { description: Healthy or database not configured }
-        '503': { description: Configured database unreachable }
+      summary: API, database, and worker health
+      responses: {'200': {description: Healthy or unconfigured dependencies}, '503': {description: Configured database unavailable}}
   /api/v1/library:
     get:
-      summary: Search sample catalog
+      summary: Search the bundled language/framework catalog
       parameters:
-        - in: query
-          name: q
-          schema: { type: string }
-        - in: query
-          name: category
-          schema: { type: string }
-      responses:
-        '200': { description: Demo catalog results }
-  /api/v1/swift/inspect:
+        - {in: query, name: q, schema: {type: string}}
+        - {in: query, name: category, schema: {type: string}}
+      responses: {'200': {description: Catalog results}}
+  /api/v1/auth/device/start:
     post:
-      summary: Inspect Swift project metadata; does not compile
+      summary: Start GitHub OAuth device authorization
+      responses: {'200': {description: GitHub device authorization data}, '503': {description: GitHub OAuth is not configured}}
+  /api/v1/auth/device/poll:
+    post:
+      summary: Poll GitHub OAuth device authorization
       requestBody:
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [files]
-              properties:
-                files:
-                  type: array
-                  maxItems: 5000
-                  items:
-                    type: object
-                    required: [path]
-                    properties:
-                      path: { type: string, maxLength: 1024 }
-                      content: { type: string, maxLength: 1000000 }
-      responses:
-        '200': { description: Project metadata }
-        '400': { description: Invalid manifest }
+        content: {application/json: {schema: {type: object, required: [deviceCode], properties: {deviceCode: {type: string}, interval: {type: integer}}}}}
+      responses: {'200': {description: Pending or completed authorization}}
+  /api/v1/auth/me:
+    get:
+      security: [{bearerAuth: []}]
+      responses: {'200': {description: Authenticated user}, '401': {description: Unauthorized}}
+  /api/v1/auth/logout:
+    post:
+      security: [{bearerAuth: []}]
+      responses: {'204': {description: Session revoked}}
+  /api/v1/github/repos:
+    get:
+      security: [{bearerAuth: []}]
+      parameters: [{in: query, name: q, schema: {type: string}}, {in: query, name: page, schema: {type: integer, minimum: 1}}]
+      responses: {'200': {description: GitHub repository search}}
+  /api/v1/github/repos/{owner}/{repo}:
+    get:
+      security: [{bearerAuth: []}]
+      parameters: [{in: path, name: owner, required: true, schema: {type: string}}, {in: path, name: repo, required: true, schema: {type: string}}]
+      responses: {'200': {description: Repository metadata}}
+  /api/v1/swift/inspect:
+    post:
+      summary: Inspect Swift project metadata without compiling
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [files], properties: {files: {type: array, maxItems: 5000, items: {type: object, required: [path], properties: {path: {type: string}, content: {type: string}}}}}}}}
+      responses: {'200': {description: Project metadata}, '400': {description: Invalid manifest}}
   /api/v1/jobs:
     post:
-      summary: Register a build/run/test request
-      description: Accepted requests remain blocked until an isolated worker is configured.
-      responses:
-        '202': { description: Job accepted but not executed }
+      security: [{bearerAuth: []}]
+      summary: Submit a build/run/test request to the configured worker
+      responses: {'202': {description: Job accepted}}
+  /api/v1/jobs/{id}:
+    get:
+      security: [{bearerAuth: []}]
+      parameters: [{in: path, name: id, required: true, schema: {type: string}}]
+      responses: {'200': {description: Job status}, '404': {description: Job not found}}
+  /api/v1/projects:
+    get:
+      security: [{bearerAuth: []}]
+      responses: {'200': {description: User projects}}
+    post:
+      security: [{bearerAuth: []}]
+      responses: {'201': {description: Project created}}
+  /api/v1/projects/{id}/files:
+    get:
+      security: [{bearerAuth: []}]
+      parameters: [{in: path, name: id, required: true, schema: {type: string}}]
+      responses: {'200': {description: Project files}}
+    put:
+      security: [{bearerAuth: []}]
+      parameters: [{in: path, name: id, required: true, schema: {type: string}}]
+      responses: {'200': {description: File saved}}
