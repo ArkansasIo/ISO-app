@@ -1,0 +1,32 @@
+services:
+  api:
+    build: ./api
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      DATABASE_URL: mysql://ide:ide_dev_only@mysql:3306/github_universal_ide
+      CRON_ENABLED: "true"
+      CRON_TIMEZONE: America/Toronto
+      CORS_ORIGIN: http://localhost:8080
+    ports: ["8080:8080"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: github_universal_ide
+      MYSQL_USER: ide
+      MYSQL_PASSWORD: ide_dev_only
+      MYSQL_ROOT_PASSWORD: root_dev_only
+    ports: ["3306:3306"]
+    volumes:
+      - ide_mysql_data:/var/lib/mysql
+      - ./api/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u ide -pide_dev_only --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  ide_mysql_data:
