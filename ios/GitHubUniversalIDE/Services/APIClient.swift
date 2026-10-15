@@ -1,0 +1,2 @@
+import Foundation
+final class APIClient { static let shared=APIClient(); var baseURL=URL(string:"http://localhost:8080")!; private init(){}; func get<T:Decodable>(_ path:String,as type:T.Type) async throws -> T { let url=URL(string:path,relativeTo:baseURL)!;var req=URLRequest(url:url);req.timeoutInterval=20;let(data,response)=try await URLSession.shared.data(for:req);guard let http=response as? HTTPURLResponse,(200..<300).contains(http.statusCode) else{throw URLError(.badServerResponse)};return try JSONDecoder().decode(T.self,from:data) } }
