@@ -1,0 +1,54 @@
+openapi: 3.1.0
+info:
+  title: GitHub Universal IDE API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/v1/health:
+    get:
+      summary: API and database health
+      responses:
+        '200': { description: Healthy or database not configured }
+        '503': { description: Configured database unreachable }
+  /api/v1/library:
+    get:
+      summary: Search sample catalog
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+      responses:
+        '200': { description: Demo catalog results }
+  /api/v1/swift/inspect:
+    post:
+      summary: Inspect Swift project metadata; does not compile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  maxItems: 5000
+                  items:
+                    type: object
+                    required: [path]
+                    properties:
+                      path: { type: string, maxLength: 1024 }
+                      content: { type: string, maxLength: 1000000 }
+      responses:
+        '200': { description: Project metadata }
+        '400': { description: Invalid manifest }
+  /api/v1/jobs:
+    post:
+      summary: Register a build/run/test request
+      description: Accepted requests remain blocked until an isolated worker is configured.
+      responses:
+        '202': { description: Job accepted but not executed }
