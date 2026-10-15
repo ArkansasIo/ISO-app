@@ -1,0 +1,4 @@
+export interface GitHubRepositoryInfo { owner: string; name: string; defaultBranch: string; private: boolean; htmlUrl: string; }
+export interface GitHubClient { getRepository(owner: string, repo: string): Promise<GitHubRepositoryInfo>; searchRepositories(query: string, page?: number): Promise<unknown>; downloadArchive(owner: string, repo: string, ref?: string): Promise<Uint8Array>; }
+export interface GitTransportClient { clone(repositoryUrl: string, workspaceId: string): Promise<void>; pull(workspaceId: string, branch: string): Promise<{ahead:number;behind:number;conflicts:string[]}>; push(workspaceId: string, branch: string, message: string): Promise<{commitSha:string}>; }
+export interface WorkerClient { submit(input:{kind:"build"|"run"|"test";projectId:string;language:string;entrypoint:string;timeoutSeconds:number}):Promise<{jobId:string;status:"queued"|"running"}>; getStatus(jobId:string):Promise<{status:string;stdout:string;stderr:string}>; }
