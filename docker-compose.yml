@@ -8,10 +8,21 @@ services:
       CRON_ENABLED: "true"
       CRON_TIMEZONE: America/Toronto
       CORS_ORIGIN: http://localhost:8080
+      APP_ENCRYPTION_KEY: development-only-change-me-32-bytes
+      WORKER_URL: http://worker:8090
+      WORKER_SHARED_SECRET: local-worker-secret
     ports: ["8080:8080"]
     depends_on:
       mysql:
         condition: service_healthy
+      worker:
+        condition: service_started
+  worker:
+    build: ./worker
+    environment:
+      PORT: 8090
+      WORKER_SHARED_SECRET: local-worker-secret
+    expose: ["8090"]
   mysql:
     image: mysql:8.4
     environment:
@@ -22,7 +33,6 @@ services:
     ports: ["3306:3306"]
     volumes:
       - ide_mysql_data:/var/lib/mysql
-      - ./api/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u ide -pide_dev_only --silent"]
       interval: 5s
