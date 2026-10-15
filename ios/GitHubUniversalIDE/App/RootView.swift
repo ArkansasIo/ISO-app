@@ -1,0 +1,2 @@
+import SwiftUI
+struct RootView: View { var body: some View { TabView { DashboardView().tabItem{Label("Workspace",systemImage:"square.grid.2x2")} SwiftIDEView().tabItem{Label("Editor",systemImage:"chevron.left.forwardslash.chevron.right")} LibraryView().tabItem{Label("Library",systemImage:"books.vertical")} GitHubSyncView().tabItem{Label("GitHub",systemImage:"arrow.triangle.2.circlepath")} }.preferredColorScheme(.dark).tint(.cyan) } }
