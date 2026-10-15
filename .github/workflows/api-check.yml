@@ -1,11 +1,23 @@
-name: API checks
+name: Build checks
 on: [push, pull_request]
 jobs:
-  typecheck:
+  api:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: cd api && npm install && npm run typecheck
+          cache: npm
+          cache-dependency-path: api/package.json
+      - run: cd api && npm install && npm run typecheck && npm run build
+  worker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: worker/package.json
+      - run: cd worker && npm install && npm run build
